@@ -27,7 +27,9 @@ RF24 radio(9,10);
 // Radio pipe addresses for the 2 nodes to communicate.
 const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 
-int response[16];
+
+const int max_payload_size = 32;
+char receive_payload[max_payload_size+1];
 
 // defines the type of sensor and initialize it
 int dhtSensorOnePin = 8;
@@ -62,7 +64,7 @@ int readLoadCellAnalog(int loadCellNumber);
 int readMuxAnalog(int muxLocation);
 
 // START OF FUNCTIONS
-// ****************************************************************
+// ************************** **************************************
 
 // function to turn on the voltage for the load celll
 void turnLoadCellOn(int loadCellNumber) {
@@ -180,13 +182,13 @@ int readLoadCellAnalog(int loadCellNumber) {
   // read the voltage 10 times and then calculate
   // the average for better approximation
   int loadCellValue = 0; 
-  //for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     loadCellValue += analogRead(analogVoltageFromMuxLoadCellsPin);
-  //}
+  }
 
   // turn off the voltage on load cell and then do the averaging calculation
   turnLoadCellOff(loadCellNumber);
-  //loadCellValue /= 10; 
+  loadCellValue /= 10; 
 
   return loadCellValue;
 }
@@ -219,169 +221,405 @@ int getFeederLevel(){
   return feeder_level;
 }
 
-//function to calibrate load cells
-void calibrateLoadCells(){
-  
-  Serial.println("Calibrating load cells ...");
-  
-  for(int i=1; i < 17; i++){
-    delay(1000);
-    readLoadCellAnalog(i);
-    Serial.println("...");
-  }
-  
-  for(int i=0; i < 16; i++){
-    delay(1000);
-    weightCalibration[i] = readLoadCellAnalog(i+1);
-    Serial.println("...");
-  }
-  
-}
-
-void getUpWeight(int array[16]){
-  for(int i=0; i < 8; i++){
-    delay(500);
-    weights[i] = readLoadCellAnalog(i+1);
-    array[i] = weights[i];
-    Serial.println(weights[i]);
-  }
-}
-
-void getDownWeight(int array[16]){
-  for(int i=0; i < 8; i++){
-    delay(500);
-    weights[i] = readLoadCellAnalog(i+9);
-    array[i] = weights[i];
-    Serial.println(weights[i]);
-  }
-}
-
-void getWeightInGrams(int values[]){
-  Serial.println("Weight in grams:");
-  for(int i=0; i<17; i++){
-    weights[i] = values[i] * 10 / 1.12;
-    Serial.println(weights[i]);
-  }
-}
-
-void printArray(int array[16]){
-    for(int i = 0; i < 16; i++){
-        printf("%i\t", array[i]);
-    }
-}
-
-void getDhtValuesToSend(int array[16]){
-  
-  float t1 = readTemperatureSensor(1);
-  float t2 = readTemperatureSensor(2);
-  float h1 = readHumiditySensor(1);
-  float h2 = readHumiditySensor(2);
-  
-  Serial.println(t1);
-  Serial.println(t2);
-  Serial.println(h1);
-  Serial.println(h2);
-  
-  array[0] = (int) t1;
-  array[1] = (int) ((t1 - ((float) t1)) * 100);
-  array[2] = (int) t2;
-  array[3] = (int) ((t2 - ((float) t2)) * 100);
-  array[4] = (int) h1;
-  array[5] = (int) ((h1 - ((float) h1)) * 100);
-  array[6] = (int) h2;
-  array[7] = (int) ((h2 - ((float) h2)) * 100);
-  
-}
-
-void getMuxValueToSend(int pin, int array[16]){
-
-  float value = readMuxAnalog(pin);
-  array[0] = (int) value;
-  array[1] = (int) ((value - ((float) value)) * 100);
-  
-}
-
-
 void answer(){
-  
-    for(int i=0; i<16; i++){
-          response[i] = 0;
-    }
-  
   // if there is data ready
     if ( radio.available() )
     {
       // Dump the payloads until we've gotten everything
-      unsigned long got_time;
+      uint8_t len;
       bool done = false;
       while (!done)
       {
         // Fetch the payload, and see if this was the last one.
-        done = radio.read( &response, sizeof(response) );
+        len = radio.getDynamicPayloadSize();
+        done = radio.read( receive_payload, len );
+
+        // Put a zero at the end for easy printing
+        //receive_payload[len] = 0;
 
         // Spew it
-        printf("Got payload:\t");
-        printArray(response);
-        printf("\n");
-        
-
-	// Delay just a little bit to let the other unit
-	// make the transition to receiver
-	delay(20);
+        printf("Got payload size=%i value=%s\n\r",len,receive_payload);
       }
+
+      //////////////////////  ZMAJEVO GNIJEZDO POCETAK //////////////////////
+      
+      if(strcmp(receive_payload,"load cell 1")){
+          String payload_s = String(readLoadCellAnalog(1));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 2")){
+          String payload_s = String(readLoadCellAnalog(2));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 3")){
+          String payload_s = String(readLoadCellAnalog(3));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 4")){
+          String payload_s = String(readLoadCellAnalog(4));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 5")){
+          String payload_s = String(readLoadCellAnalog(5));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 6")){
+          String payload_s = String(readLoadCellAnalog(6));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 7")){
+          String payload_s = String(readLoadCellAnalog(7));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 8")){
+          String payload_s = String(readLoadCellAnalog(8));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 9")){
+          String payload_s = String(readLoadCellAnalog(9));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 10")){
+          String payload_s = String(readLoadCellAnalog(10));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 10")){
+          String payload_s = String(readLoadCellAnalog(10));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 11")){
+          String payload_s = String(readLoadCellAnalog(11));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 12")){
+          String payload_s = String(readLoadCellAnalog(12));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 13")){
+          String payload_s = String(readLoadCellAnalog(13));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 14")){
+          String payload_s = String(readLoadCellAnalog(14));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 15")){
+          String payload_s = String(readLoadCellAnalog(15));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"load cell 16")){
+          String payload_s = String(readLoadCellAnalog(16));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 1")){
+          String payload_s = String(readMuxAnalog(1));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 2")){
+          String payload_s = String(readMuxAnalog(2));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 3")){
+          String payload_s = String(readMuxAnalog(3));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 4")){
+          String payload_s = String(readMuxAnalog(4));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 5")){
+          String payload_s = String(readMuxAnalog(5));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 6")){
+          String payload_s = String(readMuxAnalog(6));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 7")){
+          String payload_s = String(readMuxAnalog(7));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 8")){
+          String payload_s = String(readMuxAnalog(8));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 9")){
+          String payload_s = String(readMuxAnalog(9));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 10")){
+          String payload_s = String(readMuxAnalog(10));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 11")){
+          String payload_s = String(readMuxAnalog(11));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 12")){
+          String payload_s = String(readMuxAnalog(12));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 13")){
+          String payload_s = String(readMuxAnalog(13));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 14")){
+          String payload_s = String(readMuxAnalog(14));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 15")){
+          String payload_s = String(readMuxAnalog(15));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read mux analog 16")){
+          String payload_s = String(readMuxAnalog(16));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"feeder level")){
+          String payload_s = String(getFeederLevel());
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"dht22 up temperature")){
+          String payload_s = String(readTemperatureSensor(1));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"dht22 down temperature")){
+          String payload_s = String(readTemperatureSensor(2));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"dht22 up humidity")){
+          String payload_s = String(readHumiditySensor(1));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"dht22 down humidity")){
+          String payload_s = String(readHumiditySensor(2));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"turnVCC5On")){
+          turnVCC5On();
+          String payload_s = "Turned VCC 5 ON!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"turnVCC5Off")){
+          turnVCC5Off();
+          String payload_s = "Turned VCC 5 OFF!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"turnVCC6On")){
+          turnVCC6On();
+          String payload_s = "Turned VCC 6 ON!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"turnVCC6Off")){
+          turnVCC6Off();
+          String payload_s = "Turned VCC 6 OFF!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"turnVCC7On")){
+          turnVCC7On();
+          String payload_s = "Turned VCC 7 ON!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"turnVCC7Off")){
+          turnVCC7Off();
+          String payload_s = "Turned VCC 7 OFF!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"arduino analog 2")){
+          String payload_s = String(analogRead(2));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"arduino analog 3")){
+          String payload_s = String(analogRead(3));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read arduino digital 0")){
+          String payload_s = String(digitalRead(0));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read arduino digital 1")){
+          String payload_s = String(digitalRead(1));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read arduino digital 5")){
+          String payload_s = String(digitalRead(5));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"read arduino digital 6")){
+          String payload_s = String(digitalRead(6));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 0 HIGH")){
+          String payload_s = String(digitalWrite(0,HIGH));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 1 HIGH")){
+          String payload_s = String(digitalWrite(1,HIGH));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 5 HIGH")){
+          String payload_s = String(digitalWrite(0,HIGH));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 6 HIGH")){
+          String payload_s = String(digitalWrite(1,HIGH));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 0 LOW")){
+          String payload_s = String(digitalWrite(0,LOW));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 1 LOW")){
+          String payload_s = String(digitalWrite(1,LOW));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 5 LOW")){
+          String payload_s = String(digitalWrite(0,LOW));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else if(strcmp(receive_payload,"write arduino digital 6 LOW")){
+          String payload_s = String(digitalWrite(1,LOW));
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+      else{
+          String payload_s = "Unknown request code!";
+          char payload[sizeof(payload_s)];
+          payload_s.toCharArray(payload, sizeof(payload_s));
+          memcpy(receive_payload, payload, sizeof(payload) );
+      }
+
+      ////////////////////// ZMAJEVO GNIJEZDO KRAJ //////////////////////////
+      
+      printf("New payload size=%i value=%s\n\r",sizeof("value 3"),receive_payload);
 
       // First, stop listening so we can talk
       radio.stopListening();
-      int request_code = response[9];
-      switch(request_code){
-        case 1 : getUpWeight(response);
-          break;
-        case 2 : getDownWeight(response);
-          break;
-        case 3 : getDhtValuesToSend(response);
-          break;
-        case 4 : response[0] = getFeederLevel();
-          break;
-        case 5 : turnVCC5On();
-          break;
-        case 6 : turnVCC5Off();
-        case 7 : calibrateLoadCells(); 
-                  for(int i = 0; i < 8; i++){
-                  response[i] = weightCalibration[i];
-                  } 
-                  break;
-        case 8 : calibrateLoadCells(); 
-                  for(int i = 9; i < 16; i++){
-                  response[i-8] = weightCalibration[i];
-                  } 
-                  break;
-        case 9 : turnVCC6On();
-          break;
-        case 10 : turnVCC6Off();
-          break;
-        case 11 : turnVCC7On();
-          break;
-        case 12 : turnVCC7On();
-          break;
-        case 13: readLoadCellAnalog(response[10]); 
-                 response[0] = readLoadCellAnalog(response[10]);
-          break;
-        case 14: getMuxValueToSend(response[10], response);
-          break;
-        
-        
-        default : response[0] = -1;
-      }
 
       // Send the final one back.
-      radio.write( &response, sizeof(response) );
+      radio.write( receive_payload, sizeof(receive_payload) );
       printf("Sent response.\n\r");
 
       // Now, resume listening so we catch the next packets.
       radio.startListening();
     }
+  }
 
-}
 
 
 
@@ -404,44 +642,22 @@ void setup() {
   Serial.begin(57600);
   printf_begin();
   
-  //calibrateLoadCells();
 
   turn33On();
+  delay(20);
   radio.begin();
-
-  // optionally, increase the delay between retries & # of retries
+  radio.enableDynamicPayloads();
   radio.setRetries(15,15);
-  //radio.setChannel(99);
-
-  // optionally, reduce the payload size.  seems to
-  // improve reliability
-  //radio.setPayloadSize(8);
-
-  //
-  // Open pipes to other nodes for communication
-  //
-
-    radio.openWritingPipe(pipes[1]);
-    radio.openReadingPipe(1,pipes[0]);
-
-  //
-  // Start listening
-  //
-  //radio.setChannel(40);
+  radio.openWritingPipe(pipes[1]);
+  radio.openReadingPipe(1,pipes[0]);
   radio.startListening();
-
-  //
-  // Dump the configuration of the rf unit for debugging
-  //
-
   radio.printDetails();
   
 }
 
 
 void loop() {
-
- 
+ delay(100);
  answer();
  
  }
