@@ -550,49 +550,57 @@ void answer(){
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 0 HIGH")){
-          String payload_s = String(digitalWrite(0,HIGH));
+          digitalWrite(0,HIGH);
+          String payload_s = "PIN0=HIGH";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 1 HIGH")){
-          String payload_s = String(digitalWrite(1,HIGH));
+          digitalWrite(1,HIGH);
+          String payload_s = "PIN1=HIGH";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 5 HIGH")){
-          String payload_s = String(digitalWrite(0,HIGH));
+          digitalWrite(5,HIGH);
+          String payload_s = "PIN5=HIGH";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 6 HIGH")){
-          String payload_s = String(digitalWrite(1,HIGH));
+          digitalWrite(6,HIGH);
+          String payload_s = "PIN6=HIGH";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 0 LOW")){
-          String payload_s = String(digitalWrite(0,LOW));
+        digitalWrite(0,LOW);
+          String payload_s = "PIN0=LOW";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 1 LOW")){
-          String payload_s = String(digitalWrite(1,LOW));
+        digitalWrite(1,LOW);
+          String payload_s = "PIN1=LOW";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 5 LOW")){
-          String payload_s = String(digitalWrite(0,LOW));
+        digitalWrite(5,LOW);
+          String payload_s = "PIN5=LOW";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"write arduino digital 6 LOW")){
-          String payload_s = String(digitalWrite(1,LOW));
+          digitalWrite(6,LOW);
+          String payload_s = "PIN6=LOW";
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
