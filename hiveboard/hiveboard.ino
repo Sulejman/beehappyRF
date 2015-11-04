@@ -261,7 +261,7 @@ void answer(){
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"loadCell2") == 0){
-          String payload_s = "2";//String(readLoadCellAnalog(2));
+          String payload_s = String(readLoadCellAnalog(2));
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
