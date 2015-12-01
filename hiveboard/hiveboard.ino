@@ -680,24 +680,8 @@ void setup() {
 
 
 
-void loop() {
-
-  /*digitalWrite(13, HIGH);
-  delay(1000);
-  digitalWrite(13, LOW);
-  delay(1000);
-  digitalWrite(13, HIGH);
-  delay(2000);
-  digitalWrite(13, LOW);*/
-
-  /*for(int i = 1; i<17; i++){
-    delay(1000);
-    Serial.print("No# ");
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.println(readLoadCellAnalog(i));
-    
-    }*/
-  
+void loop() {  
+  answer();
+  delay(100);
   answer();
  }
