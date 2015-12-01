@@ -135,7 +135,7 @@ void muxLoadCell(unsigned char loadCellSignalLines) {
   sR.set(0, (loadCellSignalLines&0x01));
   sR.set(1, (loadCellSignalLines&0x02)>>1);
   sR.set(2, (loadCellSignalLines&0x04)>>2);
-  sR.set(3, (loadCellSignalLines&0x08)>>4);
+  sR.set(3, (loadCellSignalLines&0x08)>>3);
 }
 
 // function that returns the temperature
@@ -175,7 +175,7 @@ float readHumiditySensor(int sensorNumber) {
 int readLoadCellAnalog(int loadCellNumber) {
   // turn the voltage on for the load cell
   turnLoadCellOn(loadCellNumber);
-  //delay(1000);
+  delay(30);
   // select the correct load cell
   muxLoadCell(loadCellNumber);
 
@@ -255,13 +255,15 @@ void answer(){
       
       if(strcmp(receive_payload, "loadCell1") == 0){
           //Serial.println(readLoadCellAnalog(1));
+          readLoadCellAnalog(1);
+          delay(500);
           String payload_s = String(readLoadCellAnalog(1));
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
       }
       else if(strcmp(receive_payload,"loadCell2") == 0){
-          String payload_s = "2";//String(readLoadCellAnalog(2));
+          String payload_s = String(readLoadCellAnalog(2));
           char payload[sizeof(payload_s)];
           payload_s.toCharArray(payload, sizeof(payload_s));
           memcpy(receive_payload, payload, sizeof(payload) );
@@ -674,11 +676,28 @@ void setup() {
   radio.openReadingPipe(1,pipes[0]);
   radio.startListening();
   radio.printDetails();
-  
 }
 
 
+
 void loop() {
- delay(100);
-answer();
+
+  /*digitalWrite(13, HIGH);
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+  digitalWrite(13, HIGH);
+  delay(2000);
+  digitalWrite(13, LOW);*/
+
+  /*for(int i = 1; i<17; i++){
+    delay(1000);
+    Serial.print("No# ");
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.println(readLoadCellAnalog(i));
+    
+    }*/
+  
+  answer();
  }
